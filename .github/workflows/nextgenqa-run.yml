@@ -58,7 +58,18 @@ jobs:
       - name: Run Cypress
         if: ${{ inputs.framework == 'cypress' }}
         run: |
-          npx cypress run --spec tests/
+                    cat > cypress.config.cjs <<'EOF'
+                    module.exports = {
+                        e2e: {
+                            baseUrl: process.env.CYPRESS_baseUrl,
+                            specPattern: 'tests/**/*.cy.{js,jsx,ts,tsx}',
+                            supportFile: false,
+                        },
+                        video: true,
+                        screenshotOnRunFailure: true,
+                    };
+                    EOF
+                    npx cypress run --config-file cypress.config.cjs --e2e --spec "tests/**/*.cy.{js,jsx,ts,tsx}"
         env:
           CYPRESS_baseUrl: ${{ inputs.staging_url }}
 
@@ -70,6 +81,8 @@ jobs:
           path: |
             **/screenshots/
             allure-results/
+                        cypress/screenshots/
+                        cypress/videos/
 
       - name: Notify NextGen QA backend
         if: always() && env.NEXTGENQA_WEBHOOK_URL != ''
